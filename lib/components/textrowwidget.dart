@@ -18,7 +18,7 @@ class TextRowWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 6),
+      padding: const EdgeInsets.only(bottom: 3, top: 3),
       child: Text(
         '$content',
         style: _myController.myTextTheme(
