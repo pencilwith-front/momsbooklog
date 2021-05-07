@@ -1,7 +1,11 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:momsbooklog/components/textrowwidget.dart';
+import 'package:dio/dio.dart';
+import 'package:momsbooklog/models/Words.dart';
+import 'package:momsbooklog/models/mydictionary.dart';
 
 class RegisterPage extends StatefulWidget {
   @override
@@ -13,14 +17,22 @@ class _RegisterPageState extends State<RegisterPage> {
   final ImagePicker _picker = ImagePicker();
   TextEditingController _titleController;
   TextEditingController _wordController;
+  List<String> dicList = [];
 
-  String dropdownValue = 'One';
+  List<Words> _selectedWords = [];
 
   @override
   void initState() {
     _titleController = TextEditingController();
     _wordController = TextEditingController();
     super.initState();
+  }
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _wordController.dispose();
+    super.dispose();
   }
 
   @override
@@ -55,59 +67,65 @@ class _RegisterPageState extends State<RegisterPage> {
               children: [
                 Expanded(
                   child: TextField(
+                      controller: _wordController,
                       decoration: InputDecoration(
-                    //contentPadding: const EdgeInsets.symmetric(horizontal: 40.0),
-                    border: OutlineInputBorder(),
-                    labelText: '단어',
-                  )),
+                        //contentPadding: const EdgeInsets.symmetric(horizontal: 40.0),
+                        border: OutlineInputBorder(),
+                        labelText: '단어',
+                      )),
                 ),
                 SizedBox(
                   width: 10,
                 ),
-                GestureDetector(
-                  child: Container(
-                    child: Center(
-                        child: TextRowWidget(
-                      content: '사전\n검색',
-                      size: 15,
-                      color: Colors.white,
-                    )),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(10),
-                      color: Colors.pink,
+                Container(
+                  child: GestureDetector(
+                    child: Container(
+                      child: Center(
+                          child: TextRowWidget(
+                        content: '사전\n검색',
+                        size: 15,
+                        color: Colors.white,
+                      )),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(10),
+                        color: Colors.pink,
+                      ),
+                      width: 70,
+                      height: 55,
                     ),
-                    width: 70,
-                    height: 55,
+                    onTap: () {
+                      //TODO 사전 검색 api 연동
+                      _callDictionary();
+                    },
                   ),
-                  onTap: () {
-                    //TODO 사전 검색 api 연동
-                    print('사전검색');
-                  },
                 ),
               ],
             ),
+            SizedBox(
+              height: 10,
+            ),
             Container(
-              width: 50,
-              child: DropdownButton<String>(
-                onChanged: (String newValue) {
-                  setState(() {
-                    dropdownValue = newValue;
-                  });
-                },
-                value: dropdownValue,
-                icon: Icon(Icons.arrow_downward),
-                iconSize: 24,
-                items: <String>['One', 'Two', 'Free', 'Four']
-                    .map<DropdownMenuItem<String>>((String value) {
-                  return DropdownMenuItem<String>(
-                    value: value,
-                    child: Text(value),
+              height: 200,
+              decoration: BoxDecoration(
+                  border: Border.all(width: 2),
+                  borderRadius: BorderRadius.circular(10)),
+              child: ListView.builder(
+                itemBuilder: (context, index) {
+                  return GestureDetector(
+                    onTap: () {
+                      print(index);
+                    },
+                    child: Container(
+                      child: TextRowWidget(
+                        content: dicList[index].toString(),
+                        size: 15,
+                        color: Colors.blueGrey,
+                      ),
+                      padding: EdgeInsets.all(10),
+                    ),
                   );
-                }).toList(),
-                underline: Container(
-                  height: 2,
-                  color: Colors.deepPurpleAccent,
-                ),
+                },
+                itemCount: dicList.length,
               ),
             ),
           ],
@@ -194,5 +212,33 @@ class _RegisterPageState extends State<RegisterPage> {
     setState(() {
       _imageFile = pickedFile;
     });
+  }
+
+  void _callDictionary() async {
+    String myUrl = 'https://api.dictionaryapi.dev/api/v2/entries/en_US/' +
+        _wordController.text.toString();
+    var dio = Dio();
+
+    Response response = await dio.get(myUrl,
+        options: Options(responseType: ResponseType.plain));
+
+    if (response.statusCode == 200) {
+      // print(jsonDecode(response.data).runtimeType);
+      var jsonResponse = jsonDecode(response.data); //List
+
+      MyDic myDic = MyDic.fromJson(jsonResponse[0]);
+
+      dicList = [];
+      myDic.meanings.forEach((element) {
+        element.definitions.forEach((e) {
+          setState(() {
+            dicList.add(e.definition);
+          });
+          // print(dicList.toString());
+        });
+      });
+    } else {
+      print('Request failed with status: ${response.statusCode}.');
+    }
   }
 }

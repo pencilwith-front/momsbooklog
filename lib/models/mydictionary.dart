@@ -81,22 +81,22 @@ class Meanings {
 
 class Definitions {
   String definition;
-  List<String> synonyms;
   String example;
+  List<dynamic> synonyms;
 
-  Definitions({this.definition, this.synonyms, this.example});
+  Definitions({this.definition, this.example, this.synonyms});
 
   Definitions.fromJson(Map<String, dynamic> json) {
     definition = json['definition'];
-    synonyms = json['synonyms'].cast<String>();
     example = json['example'];
+    synonyms = json['synonyms'];
   }
 
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = new Map<String, dynamic>();
     data['definition'] = this.definition;
-    data['synonyms'] = this.synonyms;
     data['example'] = this.example;
+    data['synonyms'] = this.synonyms;
     return data;
   }
 }
